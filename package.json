@@ -1,0 +1,18 @@
+{
+  "name": "graphapi-mvp",
+  "version": "1.0.0",
+  "description": "Microsoft Tenant Query Tool MVP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "@anthropic-ai/sdk": "^0.24.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "@azure/msal-node": "^2.6.6",
+    "axios": "^1.6.2"
+  }
+}
