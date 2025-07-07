@@ -109,10 +109,29 @@ class GraphClient {
         return response;
     }
 
+    async getUsersWithGroups(limit = 10) {
+        const users = await this.getUsers(limit);
+        if (users.value) {
+            for (let user of users.value) {
+                try {
+                    const memberships = await this.getUserMemberships(user.id);
+                    user.groups = memberships.value || [];
+                } catch (error) {
+                    console.error(`Error getting groups for user ${user.id}:`, error);
+                    user.groups = [];
+                }
+            }
+        }
+        return users;
+    }
+
     async analyzeQuery(query) {
         const queryLower = query.toLowerCase();
         
         if (queryLower.includes('all users') || queryLower.includes('list users')) {
+            if (queryLower.includes('group') || queryLower.includes('member')) {
+                return await this.getUsersWithGroups(20);
+            }
             return await this.getUsers(50);
         }
         
@@ -134,7 +153,12 @@ class GraphClient {
         if (queryLower.includes('user') && (queryLower.includes('exist') || queryLower.includes('@'))) {
             const emailMatch = query.match(/[\w.-]+@[\w.-]+\.\w+/);
             if (emailMatch) {
-                return await this.getUser(emailMatch[0]);
+                const user = await this.getUser(emailMatch[0]);
+                if (user.id) {
+                    const memberships = await this.getUserMemberships(user.id);
+                    user.groups = memberships.value || [];
+                }
+                return user;
             }
         }
         
@@ -143,6 +167,11 @@ class GraphClient {
             if (searchMatch) {
                 return await this.searchGroups(searchMatch[1]);
             }
+        }
+        
+        // For queries asking about group memberships
+        if (queryLower.includes('belongs to') || queryLower.includes('member of') || queryLower.includes('in group')) {
+            return await this.getUsersWithGroups(20);
         }
         
         return { message: 'Query not recognized, fetching general tenant info', users: await this.getUsers(5), groups: await this.getGroups(5) };
